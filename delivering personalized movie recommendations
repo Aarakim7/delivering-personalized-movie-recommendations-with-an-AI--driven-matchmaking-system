@@ -1,0 +1,49 @@
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Sample movie dataset
+data = {
+    'title': [
+        'Inception', 'The Matrix', 'Interstellar', 'The Dark Knight',
+        'Pulp Fiction', 'Fight Club', 'Forrest Gump', 'The Avengers'
+    ],
+    'genres': [
+        'Action Sci-Fi Thriller', 'Action Sci-Fi', 'Adventure Drama Sci-Fi',
+        'Action Crime Drama', 'Crime Drama', 'Drama Thriller',
+        'Drama Romance', 'Action Adventure Sci-Fi'
+    ],
+    'actors': [
+        'Leonardo DiCaprio Joseph Gordon-Levitt', 'Keanu Reeves Laurence Fishburne',
+        'Matthew McConaughey Anne Hathaway', 'Christian Bale Heath Ledger',
+        'John Travolta Samuel L. Jackson', 'Brad Pitt Edward Norton',
+        'Tom Hanks Robin Wright', 'Robert Downey Jr. Chris Evans'
+    ]
+}
+
+df = pd.DataFrame(data)
+
+# Combine genres and actors for matchmaking
+df['combined_features'] = df['genres'] + ' ' + df['actors']
+
+# Vectorize the combined features
+vectorizer = TfidfVectorizer(stop_words='english')
+feature_matrix = vectorizer.fit_transform(df['combined_features'])
+
+# Function to get recommendations
+def get_recommendations(user_input, top_n=5):
+    user_profile = [user_input]
+    user_vec = vectorizer.transform(user_profile)
+    similarity_scores = cosine_similarity(user_vec, feature_matrix).flatten()
+    top_indices = similarity_scores.argsort()[-top_n:][::-1]
+    return df.iloc[top_indices][['title', 'genres', 'actors']]
+
+# Example user interaction
+if __name__ == '__main__':
+    print("🎬 Welcome to the AI-Driven Movie Recommender!")
+    user_input = input("Enter your preferences (e.g., Action, Sci-Fi, Keanu Reeves): ")
+    recommendations = get_recommendations(user_input)
+    
+    print("\n🔥 Top Movie Recommendations for You:")
+    for index, row in recommendations.iterrows():
+        print(f"- {row['title']} ({row['genres']}) starring {row['actors']}")
